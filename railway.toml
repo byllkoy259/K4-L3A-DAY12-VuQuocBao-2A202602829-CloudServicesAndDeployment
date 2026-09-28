@@ -10,7 +10,9 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+# Cố ý KHÔNG đặt startCommand: nó sẽ ghi đè CMD của Dockerfile, và Railway
+# chạy nó không qua shell nên `$PORT` không được nội suy. CMD trong Dockerfile
+# đã tự đọc ${PORT:-8000} và dùng `exec` để uvicorn nhận SIGTERM trực tiếp.
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"

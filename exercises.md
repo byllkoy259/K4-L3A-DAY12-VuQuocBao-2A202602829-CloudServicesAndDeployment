@@ -218,4 +218,21 @@ Ghi lại **một** lỗi bạn gặp khi deploy lên cloud (build fail, health 
 timeout, sai REDIS_URL, app không đọc `$PORT`...): thông báo lỗi là gì, bạn
 tìm ra nguyên nhân bằng cách nào, và sửa ra sao?
 
-> *Câu trả lời của bạn*
+Trên Render tôi không gặp lỗi build hay health check nào. Trở ngại đầu tiên là
+tài khoản Railway báo hết hạn dùng thử nên tôi không deploy tiếp được, và tôi
+chuyển sang Render bằng Blueprint đọc từ file `render.yaml`.
+
+Lỗi thật sự tôi gặp là cấu hình trên cloud không khớp với cấu hình ở máy. Không
+có thông báo lỗi nào cả, tôi chỉ phát hiện khi chụp ảnh dashboard: cột Region ghi
+Oregon, trong khi file `render.yaml` ở máy tôi đã sửa thành Singapore. Tôi chạy
+`git status` thì thấy `render.yaml` vẫn đang ở trạng thái sửa đổi, chưa commit.
+Chạy tiếp `git show origin/main:render.yaml` thì thấy bản trên GitHub vẫn là file
+gốc, không có dòng region nào. Nguyên nhân là Render đọc cấu hình từ GitHub chứ
+không đọc từ máy tôi, nên nó dùng file gốc và chọn vùng mặc định là Oregon.
+
+Region không đổi được sau khi đã tạo service. Nếu tôi cứ push bản ghi Singapore,
+lần đồng bộ Blueprint sau sẽ bị xung đột. Vì app vẫn chạy tốt ở Oregon, tôi sửa
+`render.yaml` ghi rõ `region: oregon` cho khớp với thực tế rồi mới commit và
+push. Bài học tôi rút ra là với cách deploy từ GitHub, phải push code trước khi
+deploy, và sau khi deploy nên kiểm tra lại dashboard xem cloud có chạy đúng cấu
+hình mình nghĩ không.

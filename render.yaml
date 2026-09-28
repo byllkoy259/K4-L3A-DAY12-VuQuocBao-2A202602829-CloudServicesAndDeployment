@@ -2,11 +2,16 @@
 #
 # Render đọc file này khi bạn tạo Blueprint từ repo GitHub.
 # `sync: false` = Render hỏi giá trị lúc deploy, KHÔNG lưu secret vào repo.
+#
+# Region ghi rõ `oregon` cho khớp với service đã tạo thật (region không đổi
+# được sau khi tạo). Web service và Redis phải CÙNG region mới nối được nhau
+# qua mạng nội bộ.
 
 services:
   - type: web
     name: day12-agent
     runtime: docker
+    region: oregon
     dockerfilePath: ./Dockerfile
     plan: free
     healthCheckPath: /health
@@ -25,7 +30,10 @@ services:
           type: redis
           property: connectionString
 
+  # Render Key Value (engine Valkey 8, tương thích Redis). ipAllowList rỗng =
+  # chỉ nhận kết nối từ mạng nội bộ của Render, Internet không gọi vào được.
   - type: redis
     name: day12-redis
+    region: oregon
     plan: free
     ipAllowList: []

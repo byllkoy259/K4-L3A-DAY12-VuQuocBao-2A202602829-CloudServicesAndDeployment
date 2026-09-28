@@ -10,17 +10,17 @@
 
 | Mục | Nội dung |
 |-----|----------|
-| Họ và tên | (điền họ tên) |
-| Mã học viên | (điền mã học viên) |
-| Repo | (điền link repo K4-L3A-DAY12-HoVaTen-MSSV-CloudServicesAndDeployment) |
+| Họ và tên | Vũ Quốc Bảo |
+| Mã học viên | 2A202602829 |
+| Repo | https://github.com/byllkoy259/K4-L3A-DAY12-VuQuocBao-2A202602829-CloudServicesAndDeployment |
 
 ## Service
 
 | Mục | Nội dung |
 |-----|----------|
-| Public URL | https://TODO-thay-bang-url-that.up.railway.app |
-| Platform | Railway / Render / Cloud Run — (điền platform bạn dùng) |
-| Ngày deploy | (điền ngày) |
+| Public URL | https://day12-agent-5b9x.onrender.com |
+| Platform | Render (Blueprint từ `render.yaml`, web service Docker, gói free, region Oregon) |
+| Ngày deploy | 2026-09-28 |
 
 ## Biến Môi Trường Đã Set Trên Cloud
 
@@ -28,12 +28,12 @@ Ghi tên biến và **nguồn giá trị**, không ghi giá trị:
 
 | Biến | Đã set | Ghi chú |
 |------|--------|---------|
-| `PORT` | ✅ | platform tự gán |
-| `AGENT_API_KEY` | ✅ | đặt trong dashboard, không nằm trong repo |
-| `REDIS_URL` | ✅ | (điền: Redis add-on của platform / Upstash / ...) |
-| `RATE_LIMIT_PER_MINUTE` | ✅ | 10 |
-| `MONTHLY_BUDGET_USD` | ✅ | 10.0 |
-| `LOG_LEVEL` | ✅ | INFO |
+| `PORT` | ✅ | Render tự gán, app đọc qua `${PORT:-8000}` trong CMD của Dockerfile |
+| `AGENT_API_KEY` | ✅ | nhập tay lúc tạo Blueprint (`sync: false`), không nằm trong repo |
+| `REDIS_URL` | ✅ | Render Key Value `day12-redis` (Valkey 8), lấy tự động qua `fromService` → `connectionString` (địa chỉ nội bộ) |
+| `RATE_LIMIT_PER_MINUTE` | ✅ | 10 (khai báo trong `render.yaml`) |
+| `MONTHLY_BUDGET_USD` | ✅ | 10.0 (khai báo trong `render.yaml`) |
+| `LOG_LEVEL` | ✅ | INFO (khai báo trong `render.yaml`) |
 
 ## Lệnh Kiểm Tra
 
@@ -70,11 +70,32 @@ done; echo
 
 ## Kết Quả Chạy Thật
 
-Dán output của các lệnh trên vào đây:
+Output khi gọi vào `https://day12-agent-5b9x.onrender.com` ngày 2026-09-28:
 
 ```
-(điền output)
+# 1. GET /health
+HTTP/1.1 200 OK
+{"status":"ok","service":"day12-agent","version":"1.0.0"}
+
+# 2. GET /ready
+HTTP/1.1 200 OK
+{"status":"ready","redis":true}
+
+# 3. POST /ask không có API key
+HTTP/1.1 401 Unauthorized
+{"detail":"invalid or missing API key"}
+
+# 4. POST /ask có API key (X-User-Id: sv-test)
+HTTP/1.1 200 OK
+{"answer":"Câu hỏi hay. Deploy là gì thường được giải quyết bằng cách chuẩn hóa môi trường chạy: cùng một image chạy giống nhau ở laptop và trên cloud.","user_id":"sv-test","history_length":0,"cost_usd":2.145e-05,"tokens":{"in":3,"out":35}}
+
+# 5. Rate limit — 15 lần liên tiếp (cùng user sv-test)
+200 200 200 200 200 200 200 200 200 429 429 429 429 429 429
 ```
+
+Ở lệnh 5 chỉ có 9 lần 200 vì request của lệnh 4 (cùng `sv-test`, chạy ngay trước)
+đã chiếm 1 lượt trong cửa sổ 60 giây — tổng cộng đúng 10 request được cho qua,
+khớp `RATE_LIMIT_PER_MINUTE=10`, từ request thứ 11 trở đi bị chặn bằng 429.
 
 ## Ảnh Chụp Màn Hình
 
@@ -82,20 +103,3 @@ Dán output của các lệnh trên vào đây:
 
 - `screenshots/dashboard.png` — trang quản lý service trên platform
 - `screenshots/health.png` — kết quả gọi `/health` từ trình duyệt hoặc curl
-
----
-
-## Nếu Dùng Phương Án Dự Phòng
-
-Không đăng ký được tài khoản cloud? Vẫn nộp được bài, nhưng CP5 tối đa 60% điểm:
-
-1. Đặt `LOCAL_FALLBACK=true` trong `.env`
-2. Chạy `docker compose up -d` rồi kiểm tra `docker compose ps`
-3. Chụp màn hình vào `screenshots/`
-4. Chạy `pytest tests/test_cp5.py -v` — bộ test sẽ tự chuyển sang kiểm tra
-   `http://localhost:8000`
-5. Ghi rõ lý do không deploy được vào phần dưới đây:
-
-```
-(điền lý do nếu dùng phương án dự phòng, ngược lại xóa mục này)
-```
