@@ -1,5 +1,4 @@
-# ═══════════════════════════════════════════════════════════════════
-# CP2 — Containerization (production-ready)
+# ═══════════════════════════════════════════════════════════════════## CP2 — Containerization (production-ready)
 #
 #   [x] Multi-stage: `builder` cài dependency, `runtime` chỉ nhận kết quả
 #   [x] Base image python:3.11-slim ở cả hai stage
@@ -36,9 +35,11 @@ RUN useradd --create-home --uid 10001 appuser
 # Chỉ mang sang thư viện đã cài, không mang theo cache/compiler của builder
 COPY --from=builder /install /usr/local
 
-# Source code copy SAU cùng — layer thay đổi thường xuyên nhất
-COPY --chown=appuser:appuser app ./app
-COPY --chown=appuser:appuser utils ./utils
+# Source code copy SAU cùng — layer thay đổi thường xuyên nhất.
+# Cố ý để file thuộc root (không --chown): appuser đọc được nhưng không sửa
+# được code — app bị chiếm quyền cũng không ghi đè được chính nó.
+COPY app ./app
+COPY utils ./utils
 
 USER appuser
 
