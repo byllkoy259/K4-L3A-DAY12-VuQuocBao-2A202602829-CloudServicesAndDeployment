@@ -40,7 +40,9 @@ services:
     image: day12-agent:local
     pull_policy: build   # image tự build, không có trên Docker Hub → đừng thử pull
     ports:
-      - "8000:8000"
+      # Một instance → cổng 8000. `--scale agent=3` → mỗi bản sao lấy một cổng
+      # trong dải 8000-8002 thay vì tranh nhau cổng 8000 và báo lỗi.
+      - "8000-8002:8000"
     environment:
       # Nội suy từ .env — `:?` làm compose dừng ngay nếu biến chưa được set
       AGENT_API_KEY: ${AGENT_API_KEY:?AGENT_API_KEY is not set in .env}
@@ -58,6 +60,22 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    restart: unless-stopped
+
+  # Mở rộng tùy chọn (CP4) — load balancer round-robin trước các bản sao agent.
+  # Chỉ chạy khi bật profile `lb`:
+  #     docker compose --profile lb up -d --scale agent=3
+  #     → gọi qua http://localhost:8080
+  nginx:
+    image: nginx:1.27-alpine
+    profiles: ["lb"]
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      agent:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
